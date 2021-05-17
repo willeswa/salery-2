@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">salery2</string>
+    <string name="invalid_input">Please provide valid values</string>
+    <string name="success">\" added successfully!\"</string>
+    <string name="app_name_label"><![CDATA[Salery - Wines & Spirit Manager]]></string>
+    <string name="new_product_label">Add a new product</string>
 </resources>
