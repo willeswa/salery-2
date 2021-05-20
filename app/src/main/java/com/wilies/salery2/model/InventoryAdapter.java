@@ -9,18 +9,26 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.wilies.salery2.ItemTouchAdapter;
 import com.wilies.salery2.R;
+import com.wilies.salery2.SaleryExecutor;
+import com.wilies.salery2.views.ItemClickHelper;
 
 import java.util.List;
-import java.util.zip.Inflater;
 
-public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.InventoryViewHolder> {
+public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.InventoryViewHolder> implements ItemTouchAdapter {
+    public static final String STOCK_ID_EXTRA = "stockId";
     private List<Stock> stockList;
     private LayoutInflater mLayoutInflater;
+    private final ItemClickHelper itemClickHelper;
+    private final Context mContext;
+
     private int totalInventory = 0;
 
-    public InventoryAdapter(Context context){
+    public InventoryAdapter(Context context, ItemClickHelper itemClickHelper){
         mLayoutInflater = LayoutInflater.from(context);
+        mContext = context;
+        this.itemClickHelper = itemClickHelper;
     }
 
 
@@ -48,23 +56,44 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
         notifyDataSetChanged();
     }
 
-    public int getTotalInventory() {
-        for(Stock stock: stockList){
-            totalInventory += stock.getStockAtHand();
-        }
-        return totalInventory;
+    public  Stock getStock(int i){
+        return stockList.get(i);
     }
 
-    public class InventoryViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public void onItemDismiss(int position) {
+        SaleryExecutor.getInstance().getDiskIO().execute(new Runnable() {
+            SaleryDatabase db = SaleryDatabase.getInstance(mContext.getApplicationContext());
+            @Override
+            public void run() {
+                db.mStockDao().delete(stockList.get(position));
+            }
+        });
+        stockList.remove(position);
+        notifyItemRemoved(position);
+
+    }
+
+
+    public class InventoryViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         private TextView titleTextView;
 
         public InventoryViewHolder(@NonNull View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.product_brand);
+            itemView.setOnClickListener(this);
         }
 
         public TextView getTitleTextView() {
             return titleTextView;
+        }
+
+        @Override
+        public void onClick(View view) {
+            int clickedId = getLayoutPosition();
+            Stock stock = stockList.get(clickedId);
+            itemClickHelper.onItemClick(stock.getStockItemId());
+            notifyDataSetChanged();
         }
     }
 }
